@@ -1,1 +1,3 @@
-
+vllm
+codecarbon
+pandas
