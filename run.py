@@ -2,6 +2,8 @@ import pandas as pd
 from vllm import LLM, SamplingParams
 from transformers import AutoTokenizer
 from codecarbon import EmissionsTracker
+import argparse
+from huggingface_hub import login
 
 
 def generate_prompt(language, positive):
@@ -19,6 +21,20 @@ def generate_prompt(language, positive):
         f"Search query:"
     )
     return prompt
+
+# Create an argument parser
+parser = argparse.ArgumentParser(description="Parse a Hugging Face token from the terminal.")
+
+# Add an argument for the Hugging Face token
+parser.add_argument('--token', type=str, default="none", required=False, help="Your Hugging Face token")
+
+# Parse the arguments
+args = parser.parse_args()
+
+# Access the token
+token = args.token
+
+login(token, add_to_git_credential=True)
 
 #hf_model = "ThatsGroes/Llama-3-8B-instruct-AI-Sweden-SkoleGPT"
 hf_model = "CohereForAI/aya-expanse-32b"
@@ -41,7 +57,7 @@ for _, row in df.iterrows():
     prompts.append([{"role" : "user", "content" : prompt}])
 
 
-tokenizer = AutoTokenizer.from_pretrained(hf_model)
+tokenizer = AutoTokenizer.from_pretrained(hf_model, token=token)
 
 sampling_params = SamplingParams(temperature=0.8, top_p=0.95, max_tokens=512)
 
