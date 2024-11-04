@@ -20,7 +20,8 @@ def generate_prompt(language, positive):
     )
     return prompt
 
-hf_model = "AI-Sweden-Models/Llama-3-8B-instruct"
+#hf_model = "ThatsGroes/Llama-3-8B-instruct-AI-Sweden-SkoleGPT"
+hf_model = "CohereForAI/aya-expanse-32b"
 
 df = pd.read_parquet("processed_danish_wikipedia.parquet")
 df = df[:10]
@@ -32,42 +33,37 @@ prompts = []
 for _, row in df.iterrows():
     positive = row['positive']
     prompt = generate_prompt(language, positive)
-    prompts.append(prompt)
+    # for llm.generate()
+    #prompts.append(prompt)
 
-# Load the appropriate tokenizer for your model
-tokenizer = AutoTokenizer.from_pretrained("AI-Sweden-Models/Llama-3-8B-instruct")
+    # for llm.chat(), the input must be a list of conversations, where each conversation is a list of messages. Each message is a dictionary with "role" and "content"
+    # https://docs.vllm.ai/en/stable/dev/offline_inference/llm.html
+    prompts.append([{"role" : "user", "content" : prompt}])
 
-sampling_params = SamplingParams(temperature=0.8, top_p=0.95)
+
+tokenizer = AutoTokenizer.from_pretrained(hf_model)
+
+sampling_params = SamplingParams(temperature=0.8, top_p=0.95, max_tokens=512)
 
 llm = LLM(model=hf_model)
 
 tracker = EmissionsTracker()
 tracker.start()
-outputs = llm.generate(prompts, sampling_params)
+outputs = llm.chat(prompts, sampling_params)
 emissions = tracker.stop()
 print(emissions)
 
 
 
-print(outputs.__repr__())
+#print(outputs.__repr__())
 
 
 # Print the outputs.
-for output in outputs:
-    prompt = output.prompt
-    generated_text = output.outputs[0].text
-    tokens = tokenizer.encode(generated_text, add_special_tokens=False)
-    token_count = len(tokens)
-    #token_count = len(output.outputs[0].token_ids)
-    print(output.outputs[0].token_ids)
-    print(f"Num tokens: {token_count}")
-    print(f"Prompt: {prompt!r}, Generated text: {generated_text!r}")
-
 responses = [output.outputs[0].text for output in outputs]
 
-for response in responses:
-    print(response)
-
+for prompt, response in zip(prompts, responses):
+    print(f"Prompt:\n {prompt}\n\n Response: {response}\n")
+    print("----------")
 
 tokens = sum([len(tokenizer.encode(text, add_special_tokens=False)) for text in responses])
 
