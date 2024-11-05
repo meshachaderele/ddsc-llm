@@ -4,7 +4,7 @@ from transformers import AutoTokenizer
 from codecarbon import EmissionsTracker
 import argparse
 from huggingface_hub import login
-
+from datasets import load_dataset
 
 def generate_prompt(language, positive):
     prompt = (
@@ -38,23 +38,35 @@ login(token, add_to_git_credential=True)
 
 #hf_model = "ThatsGroes/Llama-3-8B-instruct-AI-Sweden-SkoleGPT"
 hf_model = "CohereForAI/aya-expanse-32b"
+hf_model = "google/gemma-2-27b-it"
 
-df = pd.read_parquet("processed_danish_wikipedia.parquet")
-df = df[:10]
+dataset_path = "meshachaderele/negative-positive-wikipedia-2023-11-da"
+dataset = load_dataset(dataset_path, split = "train")
+#df = pd.read_parquet("processed_danish_wikipedia.parquet")
+#df = df[:10]
 
 language = "Danish" 
 
+def format_example(example: dict) -> dict:
+    prompt = generate_prompt(language, example["positive"])
+    return {"prompt": [{"role": "user", "content": prompt}]}
+
+# Apply map with the improved function
+dataset = dataset.map(format_example)
+dataset = dataset[:10]
+
+
 # Make list of queries for VLLM to process
-prompts = []
-for _, row in df.iterrows():
-    positive = row['positive']
-    prompt = generate_prompt(language, positive)
+#prompts = []
+#for _, row in df.iterrows():
+#    positive = row['positive']
+#    prompt = generate_prompt(language, positive)
     # for llm.generate()
     #prompts.append(prompt)
 
     # for llm.chat(), the input must be a list of conversations, where each conversation is a list of messages. Each message is a dictionary with "role" and "content"
     # https://docs.vllm.ai/en/stable/dev/offline_inference/llm.html
-    prompts.append([{"role" : "user", "content" : prompt}])
+#    prompts.append([{"role" : "user", "content" : prompt}])
 
 
 tokenizer = AutoTokenizer.from_pretrained(hf_model, token=token)
@@ -65,7 +77,7 @@ llm = LLM(model=hf_model)
 
 tracker = EmissionsTracker()
 tracker.start()
-outputs = llm.chat(prompts, sampling_params)
+outputs = llm.chat(dataset["prompt"], sampling_params)
 emissions = tracker.stop()
 print(emissions)
 
@@ -77,9 +89,10 @@ print(emissions)
 # Print the outputs.
 responses = [output.outputs[0].text for output in outputs]
 
-for prompt, response in zip(prompts, responses):
+for prompt, response in zip(dataset["prompt"], responses):
     print(f"Prompt:\n {prompt}\n\n Response: {response}\n")
     print("----------")
+
 
 tokens = sum([len(tokenizer.encode(text, add_special_tokens=False)) for text in responses])
 
