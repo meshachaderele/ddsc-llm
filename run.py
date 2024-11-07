@@ -98,6 +98,8 @@ if n_samples > 0:
 
 all_results = []
 
+energy_use = []
+
 for model in models:
 
     results = copy(dataset)
@@ -145,6 +147,14 @@ for model in models:
     used_percentage = round(used_memory / max_memory * 100, 3)
     inference_percentage = round(used_memory_inference / max_memory * 100, 3)
 
+    energy_use.append({
+        "model" : model, 
+        "energy_use_kwh" : energy_consumption_kwh, 
+        "num_tokens_query" : sum(results["num_tokens_query"]), 
+        "num_tokens_prompt" : sum(results["num_tokens_prompt"]),
+        "num_tokens_total" : sum(results["num_tokens_query"]) + sum(results["num_tokens_prompt"])
+        })
+
     print(
         f"We ended up using {used_memory:.2f} GB GPU memory ({used_percentage:.2f}%), "
         f"of which {used_memory_inference:.2f} GB ({inference_percentage:.2f}%) "
@@ -156,15 +166,19 @@ for model in models:
     # torch.cuda.empty_cache does not properly free up memory
     del llm 
 
+energy_use = pd.DataFrame.from_records(energy_use)
+
+energy_use.to_csv("energy_use_per_model.csv", index=False)
+
 final_dataset = concatenate_datasets(all_results)
 
 print(f"Final dataset: \n {final_dataset}")
 
-for row in final_dataset.select(range(5)):
-    print(row)
-    print("\n\n")
+#for row in final_dataset.select(range(5)):
+#    print(row)
+#    print("\n\n")
 
-for prompt, response in zip(dataset["prompt"], responses):
+for prompt, response in zip(final_dataset.select(range(5))["prompt"], responses):
     print(f"Prompt:\n {prompt}\n\n Response: {response}\n")
     print("----------")
 

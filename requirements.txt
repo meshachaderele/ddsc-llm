@@ -1,3 +1,4 @@
 vllm
 codecarbon
 pandas
+datasets
