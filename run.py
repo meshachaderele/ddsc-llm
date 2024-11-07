@@ -170,6 +170,8 @@ energy_use = pd.DataFrame.from_records(energy_use)
 
 energy_use.to_csv("energy_use_per_model.csv", index=False)
 
+print(energy_use)
+
 final_dataset = concatenate_datasets(all_results)
 
 print(f"Final dataset: \n {final_dataset}")
