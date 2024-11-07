@@ -37,11 +37,29 @@ def format_example(example: dict) -> dict:
 parser = argparse.ArgumentParser(description="Parse a Hugging Face token from the terminal.")
 
 # Add an argument for the Hugging Face token
-parser.add_argument('--token', type=str, default="none", required=False, help="Your Hugging Face token")
+parser.add_argument(
+    '--token', 
+    type=str, 
+    default="", 
+    required=False, 
+    help="Your Hugging Face token"
+    )
 
-parser.add_argument('--save_to', type=str, default="DDSC/da-wikipedia-queries", required=True, help="What huggingface repo to push the generated dataset to")
+parser.add_argument(
+    '--save_to', 
+    type=str, 
+    default="", 
+    required=False, 
+    help="What huggingface repo to push the generated dataset to"
+    )
 
-parser.add_argument('--language', type=str, default="Danish", required=True, help="Language of the generated queries")
+parser.add_argument(
+    '--language', 
+    type=str, 
+    default="Danish", 
+    required=True, 
+    help="Language of the generated queries"
+    )
 
 parser.add_argument(
     '--dataset_path', 
@@ -189,6 +207,7 @@ tokens = sum([len(tokenizer.encode(text, add_special_tokens=False)) for text in 
 
 print(f"Num tokens in dataset: {tokens}")
 
-final_dataset.push_to_hub(save_to)
+if save_to:
+    final_dataset.push_to_hub(save_to)
 
 print(energy_use)
