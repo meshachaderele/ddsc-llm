@@ -180,6 +180,7 @@ print(f"Final dataset: \n {final_dataset}")
 #    print(row)
 #    print("\n\n")
 
+print("EXAMPLES FROM THE FINAL DATASET:\n\n")
 for prompt, response in zip(final_dataset.select(range(5))["prompt"], responses):
     print(f"Prompt:\n {prompt}\n\n Response: {response}\n")
     print("----------")
