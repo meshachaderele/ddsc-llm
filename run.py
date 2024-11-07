@@ -168,9 +168,9 @@ for model in models:
 
 energy_use = pd.DataFrame.from_records(energy_use)
 
-energy_use.to_csv("energy_use_per_model.csv", index=False)
+energy_use["energy_per_token_total"] = energy_use["energy_use_kwh"] / energy_use["num_tokens_total"]
 
-print(energy_use)
+energy_use.to_csv("energy_use_per_model.csv", index=False)
 
 final_dataset = concatenate_datasets(all_results)
 
@@ -190,3 +190,5 @@ tokens = sum([len(tokenizer.encode(text, add_special_tokens=False)) for text in 
 print(f"Num tokens in dataset: {tokens}")
 
 final_dataset.push_to_hub(save_to)
+
+print(energy_use)
